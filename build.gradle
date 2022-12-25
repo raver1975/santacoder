@@ -1,0 +1,39 @@
+plugins {
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation group: 'ai.djl.huggingface', name: 'tokenizers', version: '0.20.0'
+    implementation "org.apache.logging.log4j:log4j-slf4j-impl:2.17.1"
+    implementation platform("ai.djl:bom:0.16.0")
+    implementation "ai.djl:api"
+    runtimeOnly "ai.djl.pytorch:pytorch-engine"
+    runtimeOnly "ai.djl.pytorch:pytorch-model-zoo"
+}
+
+application {
+    mainClass = 'com.klemstinegroup.Santacoder'
+}
+
+sourceSets {
+    api
+    impl
+    main{
+        java {
+            srcDir 'src'
+        }
+    }
+    test {
+        java {
+            srcDir 'src'
+        }
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
