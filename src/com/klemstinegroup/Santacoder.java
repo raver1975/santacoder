@@ -24,7 +24,7 @@ public class Santacoder {
 //        }
 //        python runLocal.py 100 $'//greatest common denominator\npublic long gcd(long a,long b){' $'}'
 
-        String prefix = "//reverse fibonacci\npublic long reversefibonacci(long a,long b){";
+        String prefix = "//polynomial time factoring of a biginteger\npublic BitInteger factor(BigInteger n){";
         String suffix = "}";
         int length=1000;
         ProcessBuilder pb = new ProcessBuilder("python", "runLocal.py", ""+length, prefix.replace("\\","\\\\\\\\"), suffix.replace("\\","\\\\\\\\"));

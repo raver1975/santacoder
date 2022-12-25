@@ -41,8 +41,8 @@ if len(sys.argv)==4:
     encoding=f"<fim-prefix>{prefix}<fim-suffix>{suffix}<fim-middle>"
     maxt=int(sys.argv[1])
 
-inputs = tokenizer.encode(encoding, return_tensors="pt",padding=True, return_token_type_ids=False).to(device)
-outputs = model.generate(input_ids=inputs,max_new_tokens=maxt,temperature=0.7,do_sample=True,pad_token_id=tokenizer.pad_token_id)
+inputs = tokenizer.encode(encoding, return_tensors="pt",padding=False, return_token_type_ids=False).to(device)
+outputs = model.generate(input_ids=inputs,max_new_tokens=maxt,temperature=0.7,top_p=0.95,do_sample=True,pad_token_id=tokenizer.pad_token_id)
 out=(extract_fim_part(tokenizer.decode(tensor, skip_special_tokens=False)) for tensor in outputs)
 print(*(out))
 
