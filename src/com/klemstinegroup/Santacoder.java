@@ -24,8 +24,15 @@ public class Santacoder {
 //        }
 //        python runLocal.py 100 $'//greatest common denominator\npublic long gcd(long a,long b){' $'}'
 
-        String prefix = "//polynomial time factoring of a biginteger\npublic BitInteger factor(BigInteger n){";
-        String suffix = "}";
+        String prefix = "/**\n" +
+                "* Returns an Image object that can then be painted on the screen. \n" +
+                "*\n" +
+                "* @param  description  a description of the image\n" +
+                "* @return      the image described by description\n" +
+                "*/\n" +
+                "public Image getImage(String description) {" +
+                "\n";
+        String suffix = "return image;\n}";
         int length=1000;
         ProcessBuilder pb = new ProcessBuilder("python", "runLocal.py", ""+length, prefix.replace("\\","\\\\\\\\"), suffix.replace("\\","\\\\\\\\"));
 //        pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
