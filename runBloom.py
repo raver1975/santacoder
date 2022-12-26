@@ -15,8 +15,9 @@ tokenizer = AutoTokenizer.from_pretrained(checkpoint)
 model = AutoModelForCausalLM.from_pretrained(checkpoint, trust_remote_code=True).to(device)
 encoding=sys.argv[2]
 maxt=int(sys.argv[1])
+temp=0.7
 inputs = tokenizer.encode(encoding, return_tensors="pt",padding=False, return_token_type_ids=False).to(device)
-outputs = model.generate(input_ids=inputs,max_new_tokens=maxt,temperature=0.7,top_p=0.95,do_sample=True,pad_token_id=tokenizer.pad_token_id)
+outputs = model.generate(input_ids=inputs,max_new_tokens=maxt,temperature=temp,top_p=0.95,do_sample=True,pad_token_id=tokenizer.pad_token_id)
 out=(tokenizer.decode(tensor, skip_special_tokens=False) for tensor in outputs)
 print(*(out))
 
