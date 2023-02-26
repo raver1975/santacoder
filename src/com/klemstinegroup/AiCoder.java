@@ -14,6 +14,8 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.ToolProvider;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -60,9 +62,26 @@ public class AiCoder implements Loader, Printer {
         prefix = prefix.replaceAll("TestClass", "TestClass1");
         String suffix = "  }\n}\n";
         System.out.println(prefix + suffix);
-        String newcode = santacoderquery(sourcecode.length() + 400, prefix, suffix);
+        String newcode = santacoderquery(50, prefix, suffix,"0.7");
         System.out.println(newcode);
-        whenStringIsCompiled_ThenCodeShouldExecute("com.klemstinegroup.TestClass1", prefix + suffix);
+        Object obj=whenStringIsCompiled_ThenCodeShouldExecute("com.klemstinegroup.TestClass1", newcode);
+        if (obj!=null) {
+            System.out.println("invoking quit");
+            try {
+                Method method = obj.getClass().getMethod("quit");
+                method.invoke(obj);
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException(e);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+            System.out.println("forbidden spot");
+        }
+        else{
+            System.out.println("compilation error");
+        }
 
 
 //        bloomLarge(400,"10 step guide to creating general artificial intelligence:\n1. Build a language model that can generate plans.\n2. Build a language model that can generate code.\n3. Combine the two models by");
@@ -77,8 +96,8 @@ public class AiCoder implements Loader, Printer {
 //                "\n", "return image;\n}");
     }
 
-    public String santacoderquery(int length, String prefix, String suffix) {
-        ProcessBuilder pb = new ProcessBuilder("python", "runSantaCoder.py", "" + length, prefix.replace("\\", "\\\\\\\\").replace(" ","`"), suffix.replace("\\", "\\\\\\\\").replace(" ","`"));
+    public String santacoderquery(int length, String prefix, String suffix,String temp) {
+        ProcessBuilder pb = new ProcessBuilder("python", "runSantaCoder.py", "" + length, prefix.replace("\\", "\\\\\\\\").replace(" ","`"), suffix.replace("\\", "\\\\\\\\").replace(" ","`"),temp);
 //        pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
 
@@ -378,7 +397,7 @@ public class AiCoder implements Loader, Printer {
     public void endMarker(int type) {
     }
 
-    public void whenStringIsCompiled_ThenCodeShouldExecute(String QUALIFIED_CLASS_NAME, String SOURCE_CODE) {
+    public Object whenStringIsCompiled_ThenCodeShouldExecute(String QUALIFIED_CLASS_NAME, String SOURCE_CODE) {
         try {
             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
@@ -396,6 +415,7 @@ public class AiCoder implements Loader, Printer {
                 ClassLoader classLoader = manager.getClassLoader(null);
                 Class<?> clazz = classLoader.loadClass(QUALIFIED_CLASS_NAME);
                 Object instanceOfClass = clazz.newInstance();
+                return instanceOfClass;
 
 //            Assertions.assertInstanceOf(InMemoryClass.class, instanceOfClass);
 
@@ -404,6 +424,7 @@ public class AiCoder implements Loader, Printer {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return null;
     }
 }
 

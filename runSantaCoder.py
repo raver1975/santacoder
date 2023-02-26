@@ -39,13 +39,13 @@ if len(sys.argv)==3:
     suffix=''
     encoding=sys.argv[2]
     maxt=int(sys.argv[1])
-if len(sys.argv)==4:
+if len(sys.argv)==5:
     prefix=sys.argv[2].replace('`',' ')
     suffix=sys.argv[3].replace('`',' ')
     encoding=f"<fim-prefix>{prefix}<fim-suffix>{suffix}<fim-middle>"
     maxt=int(sys.argv[1])
-temp=1.7
-inputs = tokenizer.encode(encoding, return_tensors="pt",padding=False, return_token_type_ids=False).to(device)
+    temp=float(sys.argv[4])
+inputs = tokenizer.encode(encoding, return_tensors="pt",padding=True, return_token_type_ids=False).to(device)
 outputs = model.generate(input_ids=inputs,max_new_tokens=maxt,temperature=temp,top_p=0.95,do_sample=True,pad_token_id=tokenizer.pad_token_id)
 out=(extract_fim_part(tokenizer.decode(tensor, skip_special_tokens=False)) for tensor in outputs)
 print(*(out))
