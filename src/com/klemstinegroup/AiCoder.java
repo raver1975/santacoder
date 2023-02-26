@@ -1,13 +1,23 @@
 package com.klemstinegroup;
 
+import com.baeldung.inmemorycompilation.InMemoryClass;
+import com.baeldung.inmemorycompilation.InMemoryFileManager;
+import com.baeldung.inmemorycompilation.JavaClassAsBytes;
+import com.baeldung.inmemorycompilation.JavaSourceFromString;
 import org.jd.core.v1.ClassFileToJavaSourceDecompiler;
 import org.jd.core.v1.api.loader.Loader;
 import org.jd.core.v1.api.loader.LoaderException;
 import org.jd.core.v1.api.printer.Printer;
 
+import javax.tools.DiagnosticCollector;
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
+import javax.tools.ToolProvider;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
 
 public class AiCoder implements Loader, Printer {
     protected static final String TAB = "  ";
@@ -43,21 +53,32 @@ public class AiCoder implements Loader, Printer {
             }
         }).start();
 */
-        System.out.println(getClass("java.lang.String"));
+        String sourcecode = getClass("com.klemstinegroup.TestClass");
+        sourcecode="package com.klemstinegroup;\n"+sourcecode;
+        System.out.println("-------------------");
+        String prefix = sourcecode.substring(0, sourcecode.length() - 2)+ "\n /**\nforce quit application\n*/\npublic void quit(){";
+        prefix = prefix.replaceAll("TestClass", "TestClass1");
+        String suffix = "  }\n}\n";
+        System.out.println(prefix + suffix);
+        String newcode = santacoderquery(sourcecode.length() + 400, prefix, suffix);
+        System.out.println(newcode);
+        whenStringIsCompiled_ThenCodeShouldExecute("com.klemstinegroup.TestClass1", prefix + suffix);
+
+
 //        bloomLarge(400,"10 step guide to creating general artificial intelligence:\n1. Build a language model that can generate plans.\n2. Build a language model that can generate code.\n3. Combine the two models by");
-        bloom(400, "10 step guide to creating general artificial intelligence:\n1. Build a language model that can generate plans.\n2. Build a language model that can generate code.\n3. Combine the two models by");
-        santacoderquery(400, "/**\n" +
-                "* Returns an Image object that can then be painted on the screen. \n" +
-                "*\n" +
-                "* @param  description  a description of the image\n" +
-                "* @return      the image described by description\n" +
-                "*/\n" +
-                "public Image getImage(String description) {" +
-                "\n", "return image;\n}");
+//        bloom(400, "10 step guide to creating general artificial intelligence:\n1. Build a language model that can generate plans.\n2. Build a language model that can generate code.\n3. Combine the two models by");
+//        santacoderquery(400, "/**\n" +
+//                "* Returns an Image object that can then be painted on the screen. \n" +
+//                "*\n" +
+//                "* @param  description  a description of the image\n" +
+//                "* @return      the image described by description\n" +
+//                "*/\n" +
+//                "public Image getImage(String description) {" +
+//                "\n", "return image;\n}");
     }
 
     public String santacoderquery(int length, String prefix, String suffix) {
-        ProcessBuilder pb = new ProcessBuilder("python", "runSantaCoder.py", "" + length, prefix.replace("\\", "\\\\\\\\"), suffix.replace("\\", "\\\\\\\\"));
+        ProcessBuilder pb = new ProcessBuilder("python", "runSantaCoder.py", "" + length, prefix.replace("\\", "\\\\\\\\").replace(" ","`"), suffix.replace("\\", "\\\\\\\\").replace(" ","`"));
 //        pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
 
@@ -76,12 +97,12 @@ public class AiCoder implements Loader, Printer {
                     textBuilder.append((char) c);
                 }
             }
-            System.out.println(prefix);
+//            System.out.println(prefix);
 //            System.out.println("-----------------");
-            System.out.println(textBuilder.toString());
+//            System.out.println(textBuilder.toString());
 //            System.out.println("-----------------");
-            System.out.println(suffix);
-            return textBuilder.toString();
+//            System.out.println(suffix);
+            return prefix+textBuilder+suffix;
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
@@ -355,6 +376,34 @@ public class AiCoder implements Loader, Printer {
 
     @Override
     public void endMarker(int type) {
+    }
+
+    public void whenStringIsCompiled_ThenCodeShouldExecute(String QUALIFIED_CLASS_NAME, String SOURCE_CODE) {
+        try {
+            JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+            DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+            InMemoryFileManager manager = new InMemoryFileManager(compiler.getStandardFileManager(null, null, null));
+
+            List<JavaFileObject> sourceFiles = Collections.singletonList(new JavaSourceFromString(QUALIFIED_CLASS_NAME, SOURCE_CODE));
+
+            JavaCompiler.CompilationTask task = compiler.getTask(null, manager, diagnostics, null, null, sourceFiles);
+
+            boolean result = task.call();
+
+            if (!result) {
+                diagnostics.getDiagnostics().forEach(d -> System.out.println(String.valueOf(d)));
+            } else {
+                ClassLoader classLoader = manager.getClassLoader(null);
+                Class<?> clazz = classLoader.loadClass(QUALIFIED_CLASS_NAME);
+                Object instanceOfClass = clazz.newInstance();
+
+//            Assertions.assertInstanceOf(InMemoryClass.class, instanceOfClass);
+
+//                instanceOfClass.runCode();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
 

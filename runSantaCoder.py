@@ -11,6 +11,7 @@ def extract_fim_part(s: str):
     stop = s.find(EOD, start) or len(s)
     return s[start:stop]
 
+#print ("params:"+str(len(sys.argv))+"\n"+str(sys.argv))
 checkpoint = "bigcode/santacoder"
 device = "cuda" # for GPU usage or "cpu" for CPU usage
 FIM_PREFIX = "<fim-prefix>"
@@ -24,6 +25,8 @@ tokenizer.add_special_tokens({
     "pad_token": EOD,
 })
 model = AutoModelForCausalLM.from_pretrained(checkpoint, trust_remote_code=True).to(device)
+
+
 if len(sys.argv)==1:
     prefix='//java class to generate artificial intelligence\npublic class MySuperClass{\n  public static void main(String[] args){'
     suffix='  }\n}'
@@ -37,8 +40,8 @@ if len(sys.argv)==3:
     encoding=sys.argv[2]
     maxt=int(sys.argv[1])
 if len(sys.argv)==4:
-    prefix=sys.argv[2]
-    suffix=sys.argv[3]
+    prefix=sys.argv[2].replace('`',' ')
+    suffix=sys.argv[3].replace('`',' ')
     encoding=f"<fim-prefix>{prefix}<fim-suffix>{suffix}<fim-middle>"
     maxt=int(sys.argv[1])
 temp=1.7
