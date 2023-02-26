@@ -1,23 +1,29 @@
 package com.klemstinegroup;
 
-import com.github.plexpt.chatgpt.ChatGTP;
-import com.github.plexpt.chatgpt.Chatbot;
-import com.github.plexpt.chatgpt.Config;
+import org.jd.core.v1.ClassFileToJavaSourceDecompiler;
+import org.jd.core.v1.api.loader.Loader;
+import org.jd.core.v1.api.loader.LoaderException;
+import org.jd.core.v1.api.printer.Printer;
 
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
-public class AiCoder {
+public class AiCoder implements Loader, Printer {
+    protected static final String TAB = "  ";
+    protected static final String NEWLINE = "\n";
+
+    protected int indentationCount = 0;
+    protected StringBuilder sb = new StringBuilder();
 
     public static void main(String[] args) {
         new AiCoder();
     }
 
     public AiCoder() {
+/*
         new Thread(new Runnable() {
-            String g = "hello chatbot";
+            String g = "hello";
 
             @Override
             public void run() {
@@ -29,23 +35,25 @@ public class AiCoder {
                 while (true) {
                     g = chatGPT(g);
                     try {
-                        Thread.sleep(180000);
+                        Thread.sleep(3610000);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
                 }
             }
         }).start();
-
-//        bloom(400,"A well thought out, step by step guide to world domination\nStep 1:");
-//        santacoderquery(400,"/**\n" +
-//                "* Returns an Image object that can then be painted on the screen. \n" +
-//                "*\n" +
-//                "* @param  description  a description of the image\n" +
-//                "* @return      the image described by description\n" +
-//                "*/\n" +
-//                "public Image getImage(String description) {" +
-//                "\n", "return image;\n}");
+*/
+        System.out.println(getClass("java.lang.String"));
+//        bloomLarge(400,"10 step guide to creating general artificial intelligence:\n1. Build a language model that can generate plans.\n2. Build a language model that can generate code.\n3. Combine the two models by");
+        bloom(400, "10 step guide to creating general artificial intelligence:\n1. Build a language model that can generate plans.\n2. Build a language model that can generate code.\n3. Combine the two models by");
+        santacoderquery(400, "/**\n" +
+                "* Returns an Image object that can then be painted on the screen. \n" +
+                "*\n" +
+                "* @param  description  a description of the image\n" +
+                "* @return      the image described by description\n" +
+                "*/\n" +
+                "public Image getImage(String description) {" +
+                "\n", "return image;\n}");
     }
 
     public String santacoderquery(int length, String prefix, String suffix) {
@@ -87,7 +95,7 @@ public class AiCoder {
     //python3 -m revChatGPT
     //pip3 install revChatGPT --upgrade
 
-    static Process processchatgpt;
+    /*static Process processchatgpt;
     static StringBuilder textBuilder = new StringBuilder();
 
     static {
@@ -137,10 +145,17 @@ public class AiCoder {
                 throw new RuntimeException(e);
             }
         }
+        try {
+            Thread.sleep(15000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         String text=textBuilder.toString();
-        System.out.println(text);
+        text=text.substring(10);
+        text=text.substring(0,text.length()-8);
+        System.out.println("\n|"+text+"|");
         return text;
-    }
+    }*/
 
 //Get sessionToken
 //https://github.com/acheong08/ChatGPT/wiki/Setup#token-authentication
@@ -188,6 +203,159 @@ public class AiCoder {
         }
     }
 
+    public String bloomLarge(int length, String query) {
+        ProcessBuilder pb = new ProcessBuilder("python", "runBloomLarge.py", "" + length, query.replace("\\", "\\\\\\\\"));
+//        pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+
+        try {
+            Process process = pb.start();
+            long time = System.currentTimeMillis();
+            process.waitFor();
+            time = System.currentTimeMillis() - time;
+            System.out.println("time:" + time);
+            InputStream in = process.getInputStream();
+            StringBuilder textBuilder = new StringBuilder();
+            try (Reader reader = new BufferedReader(new InputStreamReader
+                    (in, Charset.forName(StandardCharsets.UTF_8.name())))) {
+                int c = 0;
+                while ((c = reader.read()) != -1) {
+                    textBuilder.append((char) c);
+                }
+            }
+            System.out.println(textBuilder.toString());
+            return textBuilder.toString();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String getClass(String c) {
+
+        ClassFileToJavaSourceDecompiler decompiler = new ClassFileToJavaSourceDecompiler();
+
+        try {
+            decompiler.decompile(this, this, c);
+        } catch (Exception e) {
+            return null;
+        }
+        String source = this.toString();
+        return source;
+    }
+
+    @Override
+    public byte[] load(String internalName) throws LoaderException {
+        String className = internalName;
+        String classAsPath = className.replace('.', '/') + ".class";
+        InputStream is = this.getClass().getClassLoader().getResourceAsStream(classAsPath);
+//        InputStream is = this.getClass().getResourceAsStream("/" + internalName + ".class");
+
+        if (is == null) {
+            return null;
+        } else {
+            try (InputStream in = is; ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                byte[] buffer = new byte[1024];
+                int read = in.read(buffer);
+
+                while (read > 0) {
+                    out.write(buffer, 0, read);
+                    read = in.read(buffer);
+                }
+
+                return out.toByteArray();
+            } catch (IOException e) {
+                throw new LoaderException(e);
+            }
+        }
+    }
+
+    @Override
+    public boolean canLoad(String internalName) {
+        String className = internalName;
+        String classAsPath = className.replace('.', '/') + ".class";
+        InputStream is = this.getClass().getClassLoader().getResourceAsStream(classAsPath);
+        if (is == null) return false;
+        return true;
+        //return this.getClass().getResource("/" + internalName + ".class") != null;
+    }
+
+    @Override
+    public String toString() {
+        return sb.toString();
+    }
+
+    @Override
+    public void start(int maxLineNumber, int majorVersion, int minorVersion) {
+    }
+
+    @Override
+    public void end() {
+    }
+
+    @Override
+    public void printText(String text) {
+        sb.append(text);
+    }
+
+    @Override
+    public void printNumericConstant(String constant) {
+        sb.append(constant);
+    }
+
+    @Override
+    public void printStringConstant(String constant, String ownerInternalName) {
+        sb.append(constant);
+    }
+
+    @Override
+    public void printKeyword(String keyword) {
+        sb.append(keyword);
+    }
+
+    @Override
+    public void printDeclaration(int type, String internalTypeName, String name, String descriptor) {
+        sb.append(name);
+    }
+
+    @Override
+    public void printReference(int type, String internalTypeName, String name, String descriptor, String ownerInternalName) {
+        sb.append(name);
+    }
+
+    @Override
+    public void indent() {
+        this.indentationCount++;
+    }
+
+    @Override
+    public void unindent() {
+        this.indentationCount--;
+    }
+
+    @Override
+    public void startLine(int lineNumber) {
+        for (int i = 0; i < indentationCount; i++) sb.append(TAB);
+    }
+
+    @Override
+    public void endLine() {
+        sb.append(NEWLINE);
+    }
+
+    @Override
+    public void extraLine(int count) {
+        while (count-- > 0) sb.append(NEWLINE);
+    }
+
+    @Override
+    public void startMarker(int type) {
+    }
+
+    @Override
+    public void endMarker(int type) {
+    }
 }
 
 
