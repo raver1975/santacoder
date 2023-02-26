@@ -58,11 +58,11 @@ public class AiCoder implements Loader, Printer {
         String sourcecode = getClass("com.klemstinegroup.TestClass");
         sourcecode="package com.klemstinegroup;\n"+sourcecode;
         System.out.println("-------------------");
-        String prefix = sourcecode.substring(0, sourcecode.length() - 2)+ "\n /**\nforce quit application\n*/\npublic void quit(){";
+        String prefix = sourcecode.substring(0, sourcecode.length() - 2)+ "\n /**\nquit application\n*/\npublic void quit(){";
         prefix = prefix.replaceAll("TestClass", "TestClass1");
         String suffix = "  }\n}\n";
         System.out.println(prefix + suffix);
-        String newcode = santacoderquery(100, prefix, suffix,"0.5");
+        String newcode = santacoderquery(50, prefix, suffix,"1.0");
         System.out.println(newcode);
         Object obj=whenStringIsCompiled_ThenCodeShouldExecute("com.klemstinegroup.TestClass1", newcode);
         if (obj!=null) {
