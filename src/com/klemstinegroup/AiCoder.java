@@ -62,7 +62,7 @@ public class AiCoder implements Loader, Printer {
         prefix = prefix.replaceAll("TestClass", "TestClass1");
         String suffix = "  }\n}\n";
         System.out.println(prefix + suffix);
-        String newcode = santacoderquery(50, prefix, suffix,"0.7");
+        String newcode = santacoderquery(100, prefix, suffix,"0.5");
         System.out.println(newcode);
         Object obj=whenStringIsCompiled_ThenCodeShouldExecute("com.klemstinegroup.TestClass1", newcode);
         if (obj!=null) {
