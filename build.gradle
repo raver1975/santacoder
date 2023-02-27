@@ -1,6 +1,30 @@
-plugins {
-    id 'application'
+apply plugin: 'application'
+apply plugin: 'java'
+compileJava {
+    options.fork = true
+    options.forkOptions.executable = "javac"
+    options.forkOptions.javaHome = file(System.getProperty("java.home"))
+    options.compilerArgs.addAll('-XDignore.symbol.file','--add-exports=java.base/jdk.internal=ALL-UNNAMED','--add-exports=java.base/jdk.internal.vm.annotation=ALL-UNNAMED')
+    sourceCompatibility = '13'
+    targetCompatibility = '13'
 }
+
+//apply plugin: 'java'
+
+//compileJava {
+//    options.compilerArgs.add('--add-opens=java.base/jdk.internal=ALL-UNNAMED')
+//}
+//compileJava {
+//    options.compilerArgs << '--add-opens java.base/jdk.internal.vm.annotation=ALL-UNNAMED --add-opens java.base/jdk.internal=ALL-UNNAMED'
+//}
+
+run {
+//    applicationDefaultJvmArgs =['--add-opens=java.base/jdk.internal.vm.annotation=santacoder','--add-opens=java.base/jdk.internal=santacoder']
+    jvmArgs =['--add-opens=java.base/jdk.internal.vm.annotation=ALL-UNNAMED','--add-opens=java.base/jdk.internal=ALL-UNNAMED']
+//    args=['com.klemstinegroup.AiCoder']
+}
+
+
 
 repositories {
     mavenCentral()
@@ -15,10 +39,14 @@ dependencies {
     implementation group: 'com.github.plexpt', name: 'chatgpt', version: '1.1.2'
     runtimeOnly "ai.djl.pytorch:pytorch-engine"
     runtimeOnly "ai.djl.pytorch:pytorch-model-zoo"
+    implementation group: 'org.javassist', name: 'javassist', version: '3.15.0-GA'
+//    implementation files("${System.getProperty('java.home')}/../lib/rt.jar")
+//    implementation group: 'com.nqzero', name: 'permit-reflect', version: '0.4'
 }
 
 application {
-    mainClass = 'com.klemstinegroup.Santacoder'
+//    mainClass = 'com.nqzero.permit.Permit'
+    mainClass = 'com.klemstinegroup.AiCoder'
 }
 
 sourceSets {
