@@ -6,6 +6,8 @@ import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.CtNewMethod;
+import javassist.bytecode.CodeAttribute;
+import javassist.bytecode.LineNumberAttribute;
 import org.jd.core.v1.ClassFileToJavaSourceDecompiler;
 import org.jd.core.v1.api.loader.Loader;
 import org.jd.core.v1.api.loader.LoaderException;
@@ -65,51 +67,50 @@ public class AiCoder implements Loader, Printer {
 //        source = "package com.klemstinegroup;\n" + source;
         System.out.println(source.substring(0, Math.min(100, source.length())));
         System.out.println("-------------------------------------------");
-        for (int i = 0; i < 10; i++) {
-            Object obj1 = whenStringIsCompiled_ThenCodeShouldExecute(testClass, source);
-            Method method = null;
+//        try {
+//            Method method = this.getClass().getDeclaredMethod("toLowerCase", String.class);
+//            System.out.println(method.invoke(this, "TEST"));
+//        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+//            e.printStackTrace();
+//        }\
+//        Obe tc=new TestClass();
+        for (int i = 0; i < 3; i++) {
+            System.out.println("\niter:" + i);
+            whenStringIsCompiled_ThenCodeShouldExecute(testClass, source,false);
             try {
-                method = obj1.getClass().getDeclaredMethod("toLowerCase", String.class);
-                System.out.println(method.invoke(obj1, "TEST"));
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException(e);
-            } catch (InvocationTargetException e) {
-                throw new RuntimeException(e);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
+                Method method = this.getClass().getDeclaredMethod("toLowerCase", String.class);
+                System.out.println(method.invoke(this, "TEST"));
+            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+                e.printStackTrace();
             }
         }
-
-        System.exit(0);
-
-        String sourcecode = getClass("com.klemstinegroup.TestClass");
-        sourcecode = "package com.klemstinegroup;\n" + sourcecode;
-        System.out.println("-------------------");
-        String prefix = sourcecode.substring(0, sourcecode.length() - 2) + "\n /**\nquit application\n*/\npublic void quit(){";
-        prefix = prefix.replaceAll("TestClass", "TestClass");
-        String suffix = " \n}\n}\n";
+//new AiCoder();
+//        System.exit(0);
+        while (true) {
+            String sourcecode = getClass("com.klemstinegroup.TestClass");
+            sourcecode = "package com.klemstinegroup;\n" + sourcecode;
+            System.out.println("-------------------");
+            String prefix = sourcecode.substring(0, sourcecode.length() - 2) + "\n /**\nquit application\n*/\npublic void quit(){";
+        prefix = prefix.replaceAll("TestClass", "TestClass1");
 //        String prefix="/**\\nquit application\\n*/\\npublic void quit(){";
-//        String suffix="";
-        System.out.println(prefix + suffix);
-        String newcode = santacoderquery(20, prefix, suffix, "1.5");
-        System.out.println(newcode);
-        Object obj = whenStringIsCompiled_ThenCodeShouldExecute("com.klemstinegroup.TestClass", newcode);
-        if (obj != null) {
-            System.out.println("invoking quit");
-            try {
-                Method method = obj.getClass().getMethod("quit");
-                method.invoke(obj);
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException(e);
-            } catch (InvocationTargetException e) {
-                throw new RuntimeException(e);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
+//            String suffix = " \n}\n}\n";
+        String suffix="\n}\n}\n";
+            System.out.println(prefix + suffix);
+            String newcode = santacoderquery(20, prefix, suffix, "1.5");
+            System.out.println(newcode);
+            Object obj=whenStringIsCompiled_ThenCodeShouldExecute("com.klemstinegroup.TestClass1", newcode,true);
+            if (obj!=null) {
+                System.out.println("invoking quit");
+                try {
+//                TestClass tc = new TestClass();
+//                Object instanceOfClass = clazz.newInstance();
+                    Method method = obj.getClass().getMethod("quit");
+                    method.invoke(obj);
+                } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+                System.out.println("forbidden spot");
             }
-            System.out.println("forbidden spot");
-        } else {
-            System.out.println("compilation error");
-            new AiCoder();
         }
 
 
@@ -226,7 +227,7 @@ public class AiCoder implements Loader, Printer {
         return text;
     }*/
 
-//Get sessionToken
+    //Get sessionToken
 //https://github.com/acheong08/ChatGPT/wiki/Setup#token-authentication
 //    https://github.com/ChatGPT-Hackers/ChatGPT/wiki/Setup
 /*    public String chatGPT(String query){
@@ -309,7 +310,8 @@ public class AiCoder implements Loader, Printer {
         } catch (Exception e) {
             return null;
         }
-        String source = this.toString();
+        String source = sb.toString();
+        sb = new StringBuilder();
         return source;
     }
 
@@ -347,11 +349,6 @@ public class AiCoder implements Loader, Printer {
         if (is == null) return false;
         return true;
         //return this.getClass().getResource("/" + internalName + ".class") != null;
-    }
-
-    @Override
-    public String toString() {
-        return sb.toString();
     }
 
     @Override
@@ -425,7 +422,7 @@ public class AiCoder implements Loader, Printer {
     public void endMarker(int type) {
     }
 
-    public Object whenStringIsCompiled_ThenCodeShouldExecute(String QUALIFIED_CLASS_NAME, String SOURCE_CODE) {
+    public Object whenStringIsCompiled_ThenCodeShouldExecute(String QUALIFIED_CLASS_NAME, String SOURCE_CODE,boolean obej) {
         try {
             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
@@ -448,39 +445,44 @@ public class AiCoder implements Loader, Printer {
             } else {
                 ClassLoader classLoader = manager.getClassLoader(null);
                 Class<?> clazz = classLoader.loadClass(QUALIFIED_CLASS_NAME);
-                // find a reference to the class and method you wish to inject
-                ClassPool classPool = ClassPool.getDefault();
-                CtClass ctClass = null;
-                if (classPool.getOrNull(QUALIFIED_CLASS_NAME) == null) {
-                    ctClass = classPool.makeClass(new ByteArrayInputStream(manager.getBytesMap().get(QUALIFIED_CLASS_NAME).getBytes()));
-                } else {
-                    ctClass=classPool.get(QUALIFIED_CLASS_NAME);
-                }
-                System.out.println(ctClass.getName());
-                ctClass.stopPruning(true);
 
-                // javaassist freezes methods if their bytecode is saved
-                // defrost so we can still make changes.
-                while (ctClass.isFrozen()) {
-                    try {
-                        ctClass.defrost();
-                    } catch (RuntimeException r) {
-                        r.printStackTrace();
-                    }
+
+                if (obej) {
+
+                    return clazz.newInstance();
                 }
+                else{
+                    // find a reference to the class and method you wish to inject
+                    ClassPool classPool = ClassPool.getDefault();
+                    CtClass ctClass = null;
+                    if (classPool.getOrNull(QUALIFIED_CLASS_NAME) == null) {
+                        ctClass = classPool.makeClass(new ByteArrayInputStream(manager.getBytesMap().get(QUALIFIED_CLASS_NAME).getBytes()));
+                    } else {
+                        ctClass = classPool.get(QUALIFIED_CLASS_NAME);
+                    }
+                    System.out.println(ctClass.getName());
+                    ctClass.stopPruning(true);
+
+                    // javaassist freezes methods if their bytecode is saved
+                    // defrost so we can still make changes.
+                    if (ctClass.isFrozen()) {
+                        try {
+                            ctClass.defrost();
+                        } catch (RuntimeException r) {
+                            r.printStackTrace();
+                        }
+                    }
 //                CtMethod newmethod = CtNewMethod.make("    public String toLowerCase(String s){\n" +
 //                        "        return s.toLowerCase();\n" +
 //                        "    }",ctClass);
 //                ctClass.addMethod(newmethod);
-                CtMethod method = ctClass.getDeclaredMethod("toLowerCase"); // populate this from ctClass however you wish
-                method.insertBefore("{ System.out.println(\"-----------------------\"); }");
-                method.insertBefore("{ System.out.println(\"Wheeeeee!\"+Math.random()); }");
-                byte[] bytecode = ctClass.toBytecode();
+                    CtMethod method = ctClass.getDeclaredMethod("toLowerCase"); // populate this from ctClass however you wish
+                    method.setBody("{ System.out.println(\"Wheeeeee!" + ((int) (Math.random() * 1000f)) + "\"); return null;}");
+                    byte[] bytecode = ctClass.toBytecode();
 
-                ClassDefinition definition = new ClassDefinition(clazz, bytecode);
-                RedefineClassAgent.redefineClasses(definition);
-                Object instanceOfClass = clazz.newInstance();
-                return instanceOfClass;
+                    ClassDefinition definition = new ClassDefinition(clazz, bytecode);
+                    RedefineClassAgent.redefineClasses(definition);
+                }
 
 //            Assertions.assertInstanceOf(InMemoryClass.class, instanceOfClass);
 
@@ -492,7 +494,7 @@ public class AiCoder implements Loader, Printer {
         return null;
     }
 
-    public String toLowerCase(String s){
+    public String toLowerCase(String s) {
         return s.toLowerCase();
     }
 }
