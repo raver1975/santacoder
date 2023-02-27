@@ -1,12 +1,11 @@
 package com.klemstinegroup;
 
 import com.baeldung.inmemorycompilation.InMemoryFileManager;
-import com.baeldung.inmemorycompilation.InMemoryClass;
-import com.baeldung.inmemorycompilation.JavaClassAsBytes;
 import com.baeldung.inmemorycompilation.JavaSourceFromString;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
+import javassist.CtNewMethod;
 import org.jd.core.v1.ClassFileToJavaSourceDecompiler;
 import org.jd.core.v1.api.loader.Loader;
 import org.jd.core.v1.api.loader.LoaderException;
@@ -23,7 +22,6 @@ import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -39,6 +37,7 @@ public class AiCoder implements Loader, Printer {
     }
 
     public AiCoder() {
+        System.out.println(this.getClass().getCanonicalName());
 /*
         new Thread(new Runnable() {
             String g = "hello";
@@ -61,12 +60,26 @@ public class AiCoder implements Loader, Printer {
             }
         }).start();
 */
-        String source = getClass("java.lang.String");
-        source = "package java.lang;\nimport java.lang.AbstractStringBuilder;\n" + source;
-        System.out.println(source.substring(0, Math.min(50, source.length())));
+        String testClass = "com.klemstinegroup.AiCoder";
+        String source = getClass(testClass);
+//        source = "package com.klemstinegroup;\n" + source;
+        System.out.println(source.substring(0, Math.min(100, source.length())));
         System.out.println("-------------------------------------------");
-        Object obj1 = whenStringIsCompiled_ThenCodeShouldExecute("java.lang.String", source);
-        System.out.println("TEST".toLowerCase());
+        for (int i = 0; i < 10; i++) {
+            Object obj1 = whenStringIsCompiled_ThenCodeShouldExecute(testClass, source);
+            Method method = null;
+            try {
+                method = obj1.getClass().getDeclaredMethod("toLowerCase", String.class);
+                System.out.println(method.invoke(obj1, "TEST"));
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException(e);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         System.exit(0);
 
         String sourcecode = getClass("com.klemstinegroup.TestClass");
@@ -229,7 +242,6 @@ public class AiCoder implements Loader, Printer {
         System.out.println(response);
         return response;
     }*/
-
     public String bloom(int length, String query) {
         ProcessBuilder pb = new ProcessBuilder("python", "runBloom.py", "" + length, query.replace("\\", "\\\\\\\\"));
 //        pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
@@ -421,10 +433,10 @@ public class AiCoder implements Loader, Printer {
 
             List<JavaFileObject> sourceFiles = Collections.singletonList(new JavaSourceFromString(QUALIFIED_CLASS_NAME, SOURCE_CODE));
             ArrayList<String> options = new ArrayList<>();
-            options.add("--add-exports=java.base/jdk.internal=ALL-UNNAMED");
-            options.add("--add-exports=java.base/jdk.internal.vm.annotation=ALL-UNNAMED");
-            options.add("--add-exports=java.base/java.lang=ALL-UNNAMED");
-            options.add("-XDignore.symbol.file");
+//            options.add("--add-exports=java.base/jdk.internal=ALL-UNNAMED");
+//            options.add("--add-exports=java.base/jdk.internal.vm.annotation=ALL-UNNAMED");
+//            options.add("--add-exports=java.base/java.lang=ALL-UNNAMED");
+//            options.add("-XDignore.symbol.file");
 //            options.addAll(Arrays.asList("-classpath",System.getProperty("java.class.path")));
 
             JavaCompiler.CompilationTask task = compiler.getTask(null, manager, diagnostics, options, null, sourceFiles);
@@ -436,24 +448,36 @@ public class AiCoder implements Loader, Printer {
             } else {
                 ClassLoader classLoader = manager.getClassLoader(null);
                 Class<?> clazz = classLoader.loadClass(QUALIFIED_CLASS_NAME);
-
                 // find a reference to the class and method you wish to inject
                 ClassPool classPool = ClassPool.getDefault();
-                CtClass ctClass = classPool.get(QUALIFIED_CLASS_NAME);
+                CtClass ctClass = null;
+                if (classPool.getOrNull(QUALIFIED_CLASS_NAME) == null) {
+                    ctClass = classPool.makeClass(new ByteArrayInputStream(manager.getBytesMap().get(QUALIFIED_CLASS_NAME).getBytes()));
+                } else {
+                    ctClass=classPool.get(QUALIFIED_CLASS_NAME);
+                }
+                System.out.println(ctClass.getName());
                 ctClass.stopPruning(true);
 
                 // javaassist freezes methods if their bytecode is saved
                 // defrost so we can still make changes.
-                if (ctClass.isFrozen()) {
-                    ctClass.defrost();
+                while (ctClass.isFrozen()) {
+                    try {
+                        ctClass.defrost();
+                    } catch (RuntimeException r) {
+                        r.printStackTrace();
+                    }
                 }
-
+//                CtMethod newmethod = CtNewMethod.make("    public String toLowerCase(String s){\n" +
+//                        "        return s.toLowerCase();\n" +
+//                        "    }",ctClass);
+//                ctClass.addMethod(newmethod);
                 CtMethod method = ctClass.getDeclaredMethod("toLowerCase"); // populate this from ctClass however you wish
-
-                method.insertBefore("{ System.out.println(\"Wheeeeee!\"); }");
+                method.insertBefore("{ System.out.println(\"-----------------------\"); }");
+                method.insertBefore("{ System.out.println(\"Wheeeeee!\"+Math.random()); }");
                 byte[] bytecode = ctClass.toBytecode();
 
-                ClassDefinition definition = new ClassDefinition(clazz, manager.getBytesMap().get(QUALIFIED_CLASS_NAME).getBytes());
+                ClassDefinition definition = new ClassDefinition(clazz, bytecode);
                 RedefineClassAgent.redefineClasses(definition);
                 Object instanceOfClass = clazz.newInstance();
                 return instanceOfClass;
@@ -466,6 +490,10 @@ public class AiCoder implements Loader, Printer {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public String toLowerCase(String s){
+        return s.toLowerCase();
     }
 }
 

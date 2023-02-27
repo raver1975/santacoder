@@ -20,7 +20,7 @@ compileJava {
 
 run {
 //    applicationDefaultJvmArgs =['--add-opens=java.base/jdk.internal.vm.annotation=santacoder','--add-opens=java.base/jdk.internal=santacoder']
-    jvmArgs =['--add-opens=java.base/jdk.internal.vm.annotation=ALL-UNNAMED','--add-opens=java.base/jdk.internal=ALL-UNNAMED']
+    jvmArgs =['-Djdk.attach.allowAttachSelf=true']
 //    args=['com.klemstinegroup.AiCoder']
 }
 
@@ -39,7 +39,7 @@ dependencies {
     implementation group: 'com.github.plexpt', name: 'chatgpt', version: '1.1.2'
     runtimeOnly "ai.djl.pytorch:pytorch-engine"
     runtimeOnly "ai.djl.pytorch:pytorch-model-zoo"
-    implementation group: 'org.javassist', name: 'javassist', version: '3.15.0-GA'
+    implementation group: 'org.javassist', name: 'javassist', version: '3.29.2-GA'
 //    implementation files("${System.getProperty('java.home')}/../lib/rt.jar")
 //    implementation group: 'com.nqzero', name: 'permit-reflect', version: '0.4'
 }
