@@ -1,0 +1,5 @@
+hotswap JDK
+https://github.com/TravaOpenJDK/trava-jdk-11-dcevm/releases
+
+https://github.com/nickman/retransformer
+https://sites.google.com/a/athaydes.com/renato-athaydes/posts/4freewaystohot-swapcodeonthejvm

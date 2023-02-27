@@ -1,9 +1,13 @@
 package com.klemstinegroup;
 
-import com.baeldung.inmemorycompilation.InMemoryClass;
 import com.baeldung.inmemorycompilation.InMemoryFileManager;
-import com.baeldung.inmemorycompilation.JavaClassAsBytes;
 import com.baeldung.inmemorycompilation.JavaSourceFromString;
+import javassist.ClassPool;
+import javassist.CtClass;
+import javassist.CtMethod;
+import javassist.CtNewMethod;
+import javassist.bytecode.CodeAttribute;
+import javassist.bytecode.LineNumberAttribute;
 import org.jd.core.v1.ClassFileToJavaSourceDecompiler;
 import org.jd.core.v1.api.loader.Loader;
 import org.jd.core.v1.api.loader.LoaderException;
@@ -14,10 +18,12 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.ToolProvider;
 import java.io.*;
+import java.lang.instrument.ClassDefinition;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -33,6 +39,7 @@ public class AiCoder implements Loader, Printer {
     }
 
     public AiCoder() {
+        System.out.println(this.getClass().getCanonicalName());
 /*
         new Thread(new Runnable() {
             String g = "hello";
@@ -55,32 +62,55 @@ public class AiCoder implements Loader, Printer {
             }
         }).start();
 */
-        String sourcecode = getClass("com.klemstinegroup.TestClass");
-        sourcecode="package com.klemstinegroup;\n"+sourcecode;
-        System.out.println("-------------------");
-        String prefix = sourcecode.substring(0, sourcecode.length() - 2)+ "\n /**\nquit application\n*/\npublic void quit(){";
-        prefix = prefix.replaceAll("TestClass", "TestClass1");
-        String suffix = "  }\n}\n";
-        System.out.println(prefix + suffix);
-        String newcode = santacoderquery(50, prefix, suffix,"1.0");
-        System.out.println(newcode);
-        Object obj=whenStringIsCompiled_ThenCodeShouldExecute("com.klemstinegroup.TestClass1", newcode);
-        if (obj!=null) {
-            System.out.println("invoking quit");
+        String testClass = "com.klemstinegroup.AiCoder";
+        String source = getClass(testClass);
+//        source = "package com.klemstinegroup;\n" + source;
+        System.out.println(source.substring(0, Math.min(100, source.length())));
+        System.out.println("-------------------------------------------");
+//        try {
+//            Method method = this.getClass().getDeclaredMethod("toLowerCase", String.class);
+//            System.out.println(method.invoke(this, "TEST"));
+//        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+//            e.printStackTrace();
+//        }\
+//        Obe tc=new TestClass();
+        for (int i = 0; i < 3; i++) {
+            System.out.println("\niter:" + i);
+            whenStringIsCompiled_ThenCodeShouldExecute(testClass, source,false);
             try {
-                Method method = obj.getClass().getMethod("quit");
-                method.invoke(obj);
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException(e);
-            } catch (InvocationTargetException e) {
-                throw new RuntimeException(e);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
+                Method method = this.getClass().getDeclaredMethod("toLowerCase", String.class);
+                System.out.println(method.invoke(this, "TEST"));
+            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+                e.printStackTrace();
             }
-            System.out.println("forbidden spot");
         }
-        else{
-            System.out.println("compilation error");
+//new AiCoder();
+//        System.exit(0);
+        while (true) {
+            String sourcecode = getClass("com.klemstinegroup.TestClass");
+            sourcecode = "package com.klemstinegroup;\n" + sourcecode;
+            System.out.println("-------------------");
+            String prefix = sourcecode.substring(0, sourcecode.length() - 2) + "\n /**\nquit application\n*/\npublic void quit(){";
+        prefix = prefix.replaceAll("TestClass", "TestClass1");
+//        String prefix="/**\\nquit application\\n*/\\npublic void quit(){";
+//            String suffix = " \n}\n}\n";
+        String suffix="\n}\n}\n";
+            System.out.println(prefix + suffix);
+            String newcode = santacoderquery(20, prefix, suffix, "1.5");
+            System.out.println(newcode);
+            Object obj=whenStringIsCompiled_ThenCodeShouldExecute("com.klemstinegroup.TestClass1", newcode,true);
+            if (obj!=null) {
+                System.out.println("invoking quit");
+                try {
+//                TestClass tc = new TestClass();
+//                Object instanceOfClass = clazz.newInstance();
+                    Method method = obj.getClass().getMethod("quit");
+                    method.invoke(obj);
+                } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+                System.out.println("forbidden spot");
+            }
         }
 
 
@@ -96,8 +126,8 @@ public class AiCoder implements Loader, Printer {
 //                "\n", "return image;\n}");
     }
 
-    public String santacoderquery(int length, String prefix, String suffix,String temp) {
-        ProcessBuilder pb = new ProcessBuilder("python", "runSantaCoder.py", "" + length, prefix.replace("\\", "\\\\\\\\").replace(" ","`"), suffix.replace("\\", "\\\\\\\\").replace(" ","`"),temp);
+    public String santacoderquery(int length, String prefix, String suffix, String temp) {
+        ProcessBuilder pb = new ProcessBuilder("python", "runSantaCoder.py", "" + length, prefix.replace("\\", "\\\\\\\\").replace(" ", "`"), suffix.replace("\\", "\\\\\\\\").replace(" ", "`"), temp);
 //        pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
 
@@ -121,7 +151,7 @@ public class AiCoder implements Loader, Printer {
 //            System.out.println(textBuilder.toString());
 //            System.out.println("-----------------");
 //            System.out.println(suffix);
-            return prefix+textBuilder+suffix;
+            return prefix + textBuilder + suffix;
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
@@ -197,7 +227,7 @@ public class AiCoder implements Loader, Printer {
         return text;
     }*/
 
-//Get sessionToken
+    //Get sessionToken
 //https://github.com/acheong08/ChatGPT/wiki/Setup#token-authentication
 //    https://github.com/ChatGPT-Hackers/ChatGPT/wiki/Setup
 /*    public String chatGPT(String query){
@@ -213,7 +243,6 @@ public class AiCoder implements Loader, Printer {
         System.out.println(response);
         return response;
     }*/
-
     public String bloom(int length, String query) {
         ProcessBuilder pb = new ProcessBuilder("python", "runBloom.py", "" + length, query.replace("\\", "\\\\\\\\"));
 //        pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
@@ -281,7 +310,8 @@ public class AiCoder implements Loader, Printer {
         } catch (Exception e) {
             return null;
         }
-        String source = this.toString();
+        String source = sb.toString();
+        sb = new StringBuilder();
         return source;
     }
 
@@ -319,11 +349,6 @@ public class AiCoder implements Loader, Printer {
         if (is == null) return false;
         return true;
         //return this.getClass().getResource("/" + internalName + ".class") != null;
-    }
-
-    @Override
-    public String toString() {
-        return sb.toString();
     }
 
     @Override
@@ -397,15 +422,21 @@ public class AiCoder implements Loader, Printer {
     public void endMarker(int type) {
     }
 
-    public Object whenStringIsCompiled_ThenCodeShouldExecute(String QUALIFIED_CLASS_NAME, String SOURCE_CODE) {
+    public Object whenStringIsCompiled_ThenCodeShouldExecute(String QUALIFIED_CLASS_NAME, String SOURCE_CODE,boolean obej) {
         try {
             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
             InMemoryFileManager manager = new InMemoryFileManager(compiler.getStandardFileManager(null, null, null));
 
             List<JavaFileObject> sourceFiles = Collections.singletonList(new JavaSourceFromString(QUALIFIED_CLASS_NAME, SOURCE_CODE));
+            ArrayList<String> options = new ArrayList<>();
+//            options.add("--add-exports=java.base/jdk.internal=ALL-UNNAMED");
+//            options.add("--add-exports=java.base/jdk.internal.vm.annotation=ALL-UNNAMED");
+//            options.add("--add-exports=java.base/java.lang=ALL-UNNAMED");
+//            options.add("-XDignore.symbol.file");
+//            options.addAll(Arrays.asList("-classpath",System.getProperty("java.class.path")));
 
-            JavaCompiler.CompilationTask task = compiler.getTask(null, manager, diagnostics, null, null, sourceFiles);
+            JavaCompiler.CompilationTask task = compiler.getTask(null, manager, diagnostics, options, null, sourceFiles);
 
             boolean result = task.call();
 
@@ -414,8 +445,44 @@ public class AiCoder implements Loader, Printer {
             } else {
                 ClassLoader classLoader = manager.getClassLoader(null);
                 Class<?> clazz = classLoader.loadClass(QUALIFIED_CLASS_NAME);
-                Object instanceOfClass = clazz.newInstance();
-                return instanceOfClass;
+
+
+                if (obej) {
+
+                    return clazz.newInstance();
+                }
+                else{
+                    // find a reference to the class and method you wish to inject
+                    ClassPool classPool = ClassPool.getDefault();
+                    CtClass ctClass = null;
+                    if (classPool.getOrNull(QUALIFIED_CLASS_NAME) == null) {
+                        ctClass = classPool.makeClass(new ByteArrayInputStream(manager.getBytesMap().get(QUALIFIED_CLASS_NAME).getBytes()));
+                    } else {
+                        ctClass = classPool.get(QUALIFIED_CLASS_NAME);
+                    }
+                    System.out.println(ctClass.getName());
+                    ctClass.stopPruning(true);
+
+                    // javaassist freezes methods if their bytecode is saved
+                    // defrost so we can still make changes.
+                    if (ctClass.isFrozen()) {
+                        try {
+                            ctClass.defrost();
+                        } catch (RuntimeException r) {
+                            r.printStackTrace();
+                        }
+                    }
+//                CtMethod newmethod = CtNewMethod.make("    public String toLowerCase(String s){\n" +
+//                        "        return s.toLowerCase();\n" +
+//                        "    }",ctClass);
+//                ctClass.addMethod(newmethod);
+                    CtMethod method = ctClass.getDeclaredMethod("toLowerCase"); // populate this from ctClass however you wish
+                    method.setBody("{ System.out.println(\"Wheeeeee!" + ((int) (Math.random() * 1000f)) + "\"); return null;}");
+                    byte[] bytecode = ctClass.toBytecode();
+
+                    ClassDefinition definition = new ClassDefinition(clazz, bytecode);
+                    RedefineClassAgent.redefineClasses(definition);
+                }
 
 //            Assertions.assertInstanceOf(InMemoryClass.class, instanceOfClass);
 
@@ -425,6 +492,10 @@ public class AiCoder implements Loader, Printer {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public String toLowerCase(String s) {
+        return s.toLowerCase();
     }
 }
 
