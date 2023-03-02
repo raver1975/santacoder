@@ -14,10 +14,12 @@ import org.jd.core.v1.api.loader.LoaderException;
 import org.jd.core.v1.api.printer.Printer;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.ToolProvider;
+import java.awt.*;
 import java.io.*;
 import java.lang.instrument.ClassDefinition;
 import java.lang.reflect.InvocationTargetException;
@@ -39,6 +41,7 @@ public class AiCoder {
 
     public AiCoder() {
         openFrame();
+
         String testClass = "com.klemstinegroup.AiCoder";
         String source = getClass(testClass);
         System.out.println(source.substring(0, Math.min(100, source.length())));
@@ -186,9 +189,15 @@ public class AiCoder {
     public void openFrame() {
         JFrame frame = new JFrame("<class name>");
         MainInterface mi = new MainInterface();
+        MessageConsole mc=new MessageConsole(mi.Sytem);
+        mc.redirectOut(null, System.out);
+        mc.redirectErr(Color.RED, System.err);
+        mc.setMessageLines(10);
+        mi.panel1.setBorder(new EmptyBorder(5,5,5,5));
         frame.setContentPane(mi.$$$getRootComponent$$$());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
+        frame.setSize(640,480);
         frame.setVisible(true);
     }
 }
