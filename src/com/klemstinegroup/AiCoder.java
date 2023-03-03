@@ -20,6 +20,8 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.ToolProvider;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.*;
 import java.lang.instrument.ClassDefinition;
 import java.lang.reflect.InvocationTargetException;
@@ -32,8 +34,8 @@ import java.util.List;
 
 public class AiCoder {
 
-    public MyPrinter myPrinter=new MyPrinter();
-    private MyLoader myLoader=new MyLoader();
+    public MyPrinter myPrinter = new MyPrinter();
+    private MyLoader myLoader = new MyLoader();
 
     public static void main(String[] args) {
         new AiCoder();
@@ -46,7 +48,7 @@ public class AiCoder {
         String source = getClass(testClass);
         System.out.println(source.substring(0, Math.min(100, source.length())));
         System.out.println("-------------------------------------------");
-        for (int i = 0; i < 3; i++) {
+       /* for (int i = 0; i < 3; i++) {
             System.out.println("\niter:" + i);
             whenStringIsCompiled_ThenCodeShouldExecute(testClass, source,false);
             try {
@@ -55,42 +57,34 @@ public class AiCoder {
             } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
                 e.printStackTrace();
             }
-        }
-        Oracles.bloom(400, "10 step guide to creating general artificial intelligence:\n1. Build a language model that can generate plans.\n2. Build a language model that can generate code.\n3. Combine the two models by");
+        }*/
+//        Oracles.bloom(400, "10 step guide to creating general artificial intelligence:\n1. Build a language model that can generate plans.\n2. Build a language model that can generate code.\n3. Combine the two models by");
 
-        while (true) {
-            String sourcecode = getClass("com.klemstinegroup.TestClass");
-            sourcecode = "package com.klemstinegroup;\n" + sourcecode;
-            System.out.println("-------------------");
-            String prefix = sourcecode.substring(0, sourcecode.length() - 2) + "\n /**\nquit application\n*/\npublic void quit(){";
-        prefix = prefix.replaceAll("TestClass", "TestClass1");
-        String suffix="\n}\n}\n";
-            System.out.println(prefix + suffix);
-            String newcode = Oracles.santacoderquery(20, prefix, suffix, "1.5");
-            System.out.println(newcode);
-            Object obj=whenStringIsCompiled_ThenCodeShouldExecute("com.klemstinegroup.TestClass1", newcode,true);
-            if (obj!=null) {
-                System.out.println("invoking quit");
-                try {
-                    Method method = obj.getClass().getMethod("quit");
-                    method.invoke(obj);
-                } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-                System.out.println("forbidden spot");
-            }
-        }
-
+//        while (true) {
+//            String sourcecode = getClass("com.klemstinegroup.TestClass");
+//            sourcecode = "package com.klemstinegroup;\n" + sourcecode;
+//            System.out.println("-------------------");
+//            String prefix = sourcecode.substring(0, sourcecode.length() - 2) + "\n /**\nquit application\n*/\npublic void quit(){";
+//        prefix = prefix.replaceAll("TestClass", "TestClass1");
+//        String suffix="\n}\n}\n";
+//            System.out.println(prefix + suffix);
+//            String newcode = Oracles.santacoderquery(20, prefix, suffix, "1.5");
+//            System.out.println(newcode);
+//            Object obj=whenStringIsCompiled_ThenCodeShouldExecute("com.klemstinegroup.TestClass1", newcode,true);
+//            if (obj!=null) {
+//                System.out.println("invoking quit");
+//                try {
+//                    Method method = obj.getClass().getMethod("quit");
+//                    method.invoke(obj);
+//                } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+//                    e.printStackTrace();
+//                }
+//                System.out.println("forbidden spot");
+//            }
+//        }
 
 
     }
-
-
-
-
-
-
-
 
 
     public String getClass(String c) {
@@ -107,10 +101,7 @@ public class AiCoder {
     }
 
 
-
-
-
-    public Object whenStringIsCompiled_ThenCodeShouldExecute(String QUALIFIED_CLASS_NAME, String SOURCE_CODE,boolean obej) {
+    public Object whenStringIsCompiled_ThenCodeShouldExecute(String QUALIFIED_CLASS_NAME, String SOURCE_CODE, boolean obej) {
         try {
             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
@@ -138,8 +129,7 @@ public class AiCoder {
                 if (obej) {
 
                     return clazz.newInstance();
-                }
-                else{
+                } else {
                     // find a reference to the class and method you wish to inject
                     ClassPool classPool = ClassPool.getDefault();
                     CtClass ctClass = null;
@@ -187,17 +177,56 @@ public class AiCoder {
     }
 
     public void openFrame() {
-        JFrame frame = new JFrame("<class name>");
+        JFrame frame = new JFrame("AI Coder");
         MainInterface mi = new MainInterface();
-        MessageConsole mc=new MessageConsole(mi.Sytem);
+        mi.runbloom.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("clicked bloom");
+                mi.runbloom.setEnabled(false);
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mi.bloomresult.setText(Oracles.bloom(400, mi.bloomprompt.getText()));
+                        mi.runbloom.setEnabled(true);
+                    }
+                }).start();
+            }
+        });
+        mi.runsanta.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("clicked santa");
+                mi.runsanta.setEnabled(false);
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        String[] s=mi.santaprompt.getText().split("<here>");
+                        mi.santaresult.setText(Oracles.santacoderquery(400, s[0],s[1],"1.0"));
+                        mi.runsanta.setEnabled(true);
+                    }
+                }).start();
+
+            }
+        });
+        String sourcecode = getClass("com.klemstinegroup.TestClass");
+        sourcecode = "package com.klemstinegroup;\n" + sourcecode;
+        System.out.println("-------------------");
+        String prefix = sourcecode.substring(0, sourcecode.length() - 2) + "\n /**\nquit application\n*/\npublic void quit(){<here>}}";
+        mi.santaprompt.setText(prefix);
+
+
+        MessageConsole mc = new MessageConsole(mi.Sytem);
         mc.redirectOut(null, System.out);
         mc.redirectErr(Color.RED, System.err);
         mc.setMessageLines(10);
-        mi.panel1.setBorder(new EmptyBorder(5,5,5,5));
+        mi.panel1.setBorder(new EmptyBorder(5, 5, 5, 5));
         frame.setContentPane(mi.$$$getRootComponent$$$());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
-        frame.setSize(640,480);
+        frame.setSize(640, 480);
         frame.setVisible(true);
     }
 }
