@@ -33,7 +33,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class AiCoder {
-
+    MainInterface mi = new MainInterface();
     public MyPrinter myPrinter = new MyPrinter();
     private MyLoader myLoader = new MyLoader();
 
@@ -98,6 +98,36 @@ public class AiCoder {
         }
         String source = myPrinter.getSource(true);
         return source;
+    }
+
+    public Class<?> compile(String QUALIFIED_CLASS_NAME, String SOURCE_CODE, boolean obej) {
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+        InMemoryFileManager manager = new InMemoryFileManager(compiler.getStandardFileManager(null, null, null));
+
+        List<JavaFileObject> sourceFiles = Collections.singletonList(new JavaSourceFromString(QUALIFIED_CLASS_NAME, SOURCE_CODE));
+        ArrayList<String> options = new ArrayList<>();
+//            options.add("--add-exports=java.base/jdk.internal=ALL-UNNAMED");
+//            options.add("--add-exports=java.base/jdk.internal.vm.annotation=ALL-UNNAMED");
+//            options.add("--add-exports=java.base/java.lang=ALL-UNNAMED");
+//            options.add("-XDignore.symbol.file");
+//            options.addAll(Arrays.asList("-classpath",System.getProperty("java.class.path")));
+
+        JavaCompiler.CompilationTask task = compiler.getTask(null, manager, diagnostics, options, null, sourceFiles);
+
+        boolean result = task.call();
+
+        if (!result) {
+            diagnostics.getDiagnostics().forEach(d -> System.out.println(String.valueOf(d)));
+        } else {
+            ClassLoader classLoader = manager.getClassLoader(null);
+            try {
+                return classLoader.loadClass(QUALIFIED_CLASS_NAME);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 
 
@@ -178,7 +208,24 @@ public class AiCoder {
 
     public void openFrame() {
         JFrame frame = new JFrame("AI Coder");
-        MainInterface mi = new MainInterface();
+
+        mi.compileButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("invoking quit");
+                Object obj = whenStringIsCompiled_ThenCodeShouldExecute("com.klemstinegroup.TestClass1", mi.santaresult.getText(), true);
+                if (obj != null) {
+                    System.out.println("invoking quit");
+                    try {
+                        Method method = obj.getClass().getMethod("quit");
+                        method.invoke(obj);
+                    } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e1) {
+                        e1.printStackTrace();
+                    }
+                    System.out.println("forbidden spot");
+                }
+            }
+        });
         mi.runbloom.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -203,9 +250,12 @@ public class AiCoder {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        String[] s=mi.santaprompt.getText().split("<here>");
-                        mi.santaresult.setText(Oracles.santacoderquery(400, s[0],s[1],"1.0"));
+                        String[] s = mi.santaprompt.getText().split("<here>");
+                        mi.santaresult.setText(Oracles.santacoderquery(400, s[0], s[1], "1.0"));
                         mi.runsanta.setEnabled(true);
+
+                        Class<?> clazz = compile("com.klemstinegroup.TestClass1", mi.santaresult.getText(), true);
+                        mi.compileButton.setEnabled(clazz != null);
                     }
                 }).start();
 
@@ -213,9 +263,12 @@ public class AiCoder {
         });
         String sourcecode = getClass("com.klemstinegroup.TestClass");
         sourcecode = "package com.klemstinegroup;\n" + sourcecode;
-        System.out.println("-------------------");
-        String prefix = sourcecode.substring(0, sourcecode.length() - 2) + "\n /**\nquit application\n*/\npublic void quit(){<here>}}";
-        mi.santaprompt.setText(prefix);
+
+            String prefix = sourcecode.substring(0, sourcecode.length() - 2) + "\n /**\nquit application\n*/\npublic void quit(){";
+        prefix = prefix.replaceAll("TestClass", "TestClass1");
+        String suffix="\n}\n}\n";
+        String outt=prefix+"\n<here>"+suffix;
+        mi.santaprompt.setText(outt);
 
 
         MessageConsole mc = new MessageConsole(mi.Sytem);
