@@ -51,6 +51,7 @@
               <component id="18034" class="javax.swing.JTextArea" binding="bloomresult">
                 <constraints/>
                 <properties>
+                  <editable value="false"/>
                   <rows value="10"/>
                   <text value=""/>
                 </properties>
@@ -119,6 +120,7 @@
               <component id="1dfac" class="javax.swing.JTextArea" binding="santaresult">
                 <constraints/>
                 <properties>
+                  <editable value="false"/>
                   <rows value="10"/>
                 </properties>
               </component>
