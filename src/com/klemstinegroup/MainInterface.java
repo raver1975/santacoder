@@ -50,7 +50,7 @@ public class MainInterface {
         final JScrollPane scrollPane2 = new JScrollPane();
         panel2.add(scrollPane2, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         bloomresult = new JTextArea();
-        bloomresult.setEditable(false);
+        bloomresult.setEditable(true);
         bloomresult.setRows(10);
         bloomresult.setText("");
         scrollPane2.setViewportView(bloomresult);
@@ -75,7 +75,7 @@ public class MainInterface {
         final JScrollPane scrollPane4 = new JScrollPane();
         panel3.add(scrollPane4, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         santaresult = new JTextArea();
-        santaresult.setEditable(false);
+        santaresult.setEditable(true);
         santaresult.setRows(10);
         scrollPane4.setViewportView(santaresult);
         final JScrollPane scrollPane5 = new JScrollPane();

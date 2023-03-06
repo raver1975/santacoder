@@ -22,6 +22,8 @@ import javax.tools.ToolProvider;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.*;
 import java.lang.instrument.ClassDefinition;
 import java.lang.reflect.InvocationTargetException;
@@ -208,7 +210,23 @@ public class AiCoder {
 
     public void openFrame() {
         JFrame frame = new JFrame("AI Coder");
+mi.santaresult.addKeyListener(new KeyListener() {
+    @Override
+    public void keyTyped(KeyEvent e) {
 
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+        Class<?> clazz = compile("com.klemstinegroup.TestClass1", mi.santaresult.getText(), true);
+        mi.compileButton.setEnabled(clazz != null);
+    }
+});
         mi.compileButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
